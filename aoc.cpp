@@ -313,6 +313,41 @@ void aoc4() {
     std::cout << sum_gear_rations << std::endl;
 }
 
+void aoc5() {
+    auto sum = 0;
+    for (std::string line; std::getline(std::cin, line);) {
+        auto cols = tokenize(tokenize(line, ':')[1], '|');
+        auto winning = tokenize(trim(cols[0]), ' ');
+        auto cards = tokenize(trim(cols[1]), ' ');
+
+
+        auto in_hand = unordered_map<int, int>();
+        for (auto c : cards) {
+            if (c == "") {
+                continue;
+            }
+            in_hand[stoi(trim(c))]++;
+        }
+
+        auto power = -1;
+        for (auto w : winning) {
+            if (w == "") {
+                continue;
+            }
+            auto it = in_hand.find(stoi(trim(w)));
+            if (it != in_hand.end()) {
+                power += 1; // it->second;
+            }
+        }
+
+        if (power > -1) {
+            auto score = pow(2, power);
+            sum += score;
+        }
+    }
+    cout << sum << endl;
+}
+
 
 int main() {
     // Problem set 1, test (0.txt)
@@ -329,5 +364,9 @@ int main() {
     // Problem set 3, test (6.txt) => 4361
     // Part 1 (7.txt) => 539713
     // Part 2 (7.txt) => 84159075
-    aoc4();
+    // aoc4();
+
+    // Problem set 4, test (8.txt) => 13
+    // Part 1 (9.txt) => 20107
+    aoc5();
 }
