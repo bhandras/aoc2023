@@ -182,15 +182,18 @@ void aoc3() {
 
 void aoc4() {
     vector<set<int>> symbols;
+    vector<set<int>> stars;
     struct number {
         int start, end;
         int value;
     };
 
     vector<map<int, number>> numbers;
+    vector<pair<int, int>> intervals;
 
     for (std::string line; std::getline(std::cin, line);) {
         symbols.push_back(set<int>());
+        stars.push_back(set<int>());
         numbers.push_back(map<int, number>());
 
         for (auto i = 0; i < line.size(); i++) {
@@ -206,10 +209,14 @@ void aoc4() {
 
                 auto num = stoi(line.substr(i, j - i));
                 numbers.back()[i] = {i, j - 1, num};
+                intervals.push_back({i, j - 1});
                 i = j-1;
             } else if (line[i] != '.') {
                 // or add a symbol if it's not a dot
                 symbols.back().insert(i);
+                if (line[i] == '*') {
+                    stars.back().insert(i);
+                }
             }
         }
     }
@@ -265,10 +272,45 @@ void aoc4() {
                 sum += value;
             }
         }
-    
     }
 
+
+    // neighboring_numbers returns the numbers that are in the i'th row next to
+    // the j'th column.
+    auto neighboring_numbers = [&](int i, int j, vector<int>& result) {
+        if (i < 0 || i >= numbers.size()) {
+            return;
+        }
+
+        for (auto kv : numbers[i]) {
+            auto num = kv.second;
+            auto start = num.start;
+            auto end = num.end;
+            auto value = num.value;
+
+            if ((start <= j && j <= end) || (start == j + 1) || (end == j - 1)) {
+                result.push_back(value);
+            }
+        }
+    };
+
     std::cout << sum << std::endl;
+
+    auto sum_gear_rations = 0;
+    for (auto i = 0; i < stars.size(); i++) {
+        for (auto j : stars[i]) {
+            vector<int> neighbors;
+            neighboring_numbers(i-1, j, neighbors);
+            neighboring_numbers(i, j, neighbors);
+            neighboring_numbers(i+1, j, neighbors);
+          
+            if (neighbors.size() == 2) {
+                sum_gear_rations += neighbors[0] * neighbors[1];
+            }
+        }
+    }
+
+    std::cout << sum_gear_rations << std::endl;
 }
 
 
@@ -286,5 +328,6 @@ int main() {
 
     // Problem set 3, test (6.txt) => 4361
     // Part 1 (7.txt) => 539713
+    // Part 2 (7.txt) => 84159075
     aoc4();
 }
