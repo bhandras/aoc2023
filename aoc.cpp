@@ -1,4 +1,5 @@
 #include "aoc.h"
+#include <cctype>
 
 void aoc1() {
     int sum = 0;
@@ -179,6 +180,98 @@ void aoc3() {
 }
 
 
+void aoc4() {
+    vector<set<int>> symbols;
+    struct number {
+        int start, end;
+        int value;
+    };
+
+    vector<map<int, number>> numbers;
+
+    for (std::string line; std::getline(std::cin, line);) {
+        symbols.push_back(set<int>());
+        numbers.push_back(map<int, number>());
+
+        for (auto i = 0; i < line.size(); i++) {
+            // find a number's start and end
+            if (std::isdigit(line[i])) {
+                auto j = i;
+                while (j < line.size() && std::isdigit(line[j])) {
+                    // not clear if a number is a symbol but gives the 
+                    // correct answer nonetheless...
+                    symbols.back().insert(j);
+                    j++;
+                }
+
+                auto num = stoi(line.substr(i, j - i));
+                numbers.back()[i] = {i, j - 1, num};
+                i = j-1;
+            } else if (line[i] != '.') {
+                // or add a symbol if it's not a dot
+                symbols.back().insert(i);
+            }
+        }
+    }
+
+    /*
+    std::cout <<"--------" << std::endl;
+    for (auto i = 0; i < symbols.size(); i++) {
+        for (auto j : symbols[i]) {
+            std::cout << j << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout <<"--------" << std::endl;
+    */
+
+    auto is_symbol = [&](int i, int j) -> bool {
+        if (i < 0 || i >= symbols.size()) {
+            return false;
+        }
+
+        return symbols[i].find(j) != symbols[i].end();
+    };
+
+    auto has_symbol_in_neighbor_rows = [&](int i, int j) -> bool {
+        return is_symbol(i-1, j-1) || is_symbol(i-1, j) || is_symbol(i-1, j+1)
+            || is_symbol(i+1, j-1) || is_symbol(i+1, j) || is_symbol(i+1, j+1);
+    };
+
+    auto sum = 0;
+    for (auto i = 0; i < numbers.size(); i++) {
+        for (auto kv : numbers[i]) {
+            auto num = kv.second;
+            auto start = num.start;
+            auto end = num.end;
+            auto value = num.value;
+
+            // start - 1, end + 1
+            if (is_symbol(i, start - 1) || is_symbol(i, end + 1)) {
+                sum += value;
+                continue;
+            }
+
+            // previous && next rows
+            auto adjacent_symbol = false;
+            for (int j = start; j <= end; j++) {
+                if (has_symbol_in_neighbor_rows(i, j)) {
+                    adjacent_symbol = true;
+                    break;
+                }
+            }
+
+            if (adjacent_symbol) {
+                sum += value;
+            }
+        }
+    
+    }
+
+    std::cout << sum << std::endl;
+}
+
+
 int main() {
     // Problem set 1, test (0.txt)
     // Part 1 (1.txt)
@@ -188,5 +281,10 @@ int main() {
 
     // Problem set 2, test (3.txt)
     // Part 1 (4.txt) => 2486
-    aoc3();
+    // Part 2 (5.txt) => 87984
+    // aoc3();
+
+    // Problem set 3, test (6.txt) => 4361
+    // Part 1 (7.txt) => 539713
+    aoc4();
 }
