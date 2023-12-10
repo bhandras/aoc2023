@@ -315,6 +315,10 @@ void aoc4() {
 
 void aoc5() {
     auto sum = 0;
+    map<int, int> copies;
+    int curr = 0;
+    int num_scratchcards = 0;
+
     for (std::string line; std::getline(std::cin, line);) {
         auto cols = tokenize(tokenize(line, ':')[1], '|');
         auto winning = tokenize(trim(cols[0]), ' ');
@@ -339,13 +343,27 @@ void aoc5() {
                 power += 1; // it->second;
             }
         }
+  
+        auto curr_copies = 0;
+        num_scratchcards++;
+        if (copies.find(curr) != copies.end()) {
+            num_scratchcards += copies[curr];
+            curr_copies = copies[curr];
+        }
 
         if (power > -1) {
             auto score = pow(2, power);
             sum += score;
+    
+            for (int i = 1; i <= power+1; i++) {
+                copies[curr+i] += 1 + curr_copies;
+            }
         }
+        curr++;
     }
+
     cout << sum << endl;
+    cout << num_scratchcards << endl;
 }
 
 
@@ -368,5 +386,6 @@ int main() {
 
     // Problem set 4, test (8.txt) => 13
     // Part 1 (9.txt) => 20107
+    // Part 1 (9.txt) => 8172507
     aoc5();
 }
