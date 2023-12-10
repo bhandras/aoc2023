@@ -1,9 +1,9 @@
 #include "aoc.h"
 #include <cctype>
 
-void aoc1() {
+void aoc1(ifstream& fs) {
     int sum = 0;
-    for (std::string line; std::getline(std::cin, line);) {
+    for (std::string line; std::getline(fs, line);) {
         int first = -1, last = -1;
         for (int i = 0, j = line.size() - 1; i < line.size() && j >= 0; ++i, --j) {
             if (first == -1 && std::isdigit(line[i])) {
@@ -24,7 +24,7 @@ void aoc1() {
     std::cout << sum << std::endl;
 }
 
-void aoc2() {
+void aoc1_part2(ifstream& fs) {
     map<string, int> digits = {
         {"zero", 0}, {"one", 1}, {"two", 2}, {"three", 3}, 
         {"four", 4}, {"five", 5}, {"six", 6}, {"seven", 7}, 
@@ -50,7 +50,7 @@ void aoc2() {
     };
 
     int sum = 0;
-    for (std::string line; std::getline(std::cin, line);) {
+    for (std::string line; std::getline(fs, line);) {
         int first = -1, last = -1;
         for (int i = 0, j = line.size() - 1; i < line.size() && j >= 0; ++i, --j) {
             if (first == -1) {
@@ -98,7 +98,7 @@ string trim(const string &str) {
     return str.substr(first, (last - first + 1));
 }
 
-void aoc3() {
+void aoc2(ifstream& fs) {
     struct game_set {
         int red, green, blue;
     };
@@ -149,7 +149,7 @@ void aoc3() {
 
     auto id_sum = 0;
     auto powersum = 0;
-    for (std::string line; std::getline(std::cin, line);) {
+    for (std::string line; std::getline(fs, line);) {
         auto game_id = get_game_id(line);
         auto sets = get_sets(line);
         
@@ -180,7 +180,7 @@ void aoc3() {
 }
 
 
-void aoc4() {
+void aoc3(ifstream& fs) {
     vector<set<int>> symbols;
     vector<set<int>> stars;
     struct number {
@@ -191,7 +191,7 @@ void aoc4() {
     vector<map<int, number>> numbers;
     vector<pair<int, int>> intervals;
 
-    for (std::string line; std::getline(std::cin, line);) {
+    for (std::string line; std::getline(fs, line);) {
         symbols.push_back(set<int>());
         stars.push_back(set<int>());
         numbers.push_back(map<int, number>());
@@ -313,13 +313,13 @@ void aoc4() {
     std::cout << sum_gear_rations << std::endl;
 }
 
-void aoc5() {
+void aoc4(ifstream& fs) {
     auto sum = 0;
     map<int, int> copies;
     int curr = 0;
     int num_scratchcards = 0;
 
-    for (std::string line; std::getline(std::cin, line);) {
+    for (std::string line; std::getline(fs, line);) {
         auto cols = tokenize(tokenize(line, ':')[1], '|');
         auto winning = tokenize(trim(cols[0]), ' ');
         auto cards = tokenize(trim(cols[1]), ' ');
@@ -366,26 +366,40 @@ void aoc5() {
     cout << num_scratchcards << endl;
 }
 
+void run(string filename, function<void(ifstream&)> fn) {
+    std::ifstream fs(filename);
+    fn(fs);
+    fs.close();
+}
+
 
 int main() {
-    // Problem set 1, test (0.txt)
-    // Part 1 (1.txt)
-    // aoc1();
-    // Part 2 (2.txt)
-    // aoc2();
+    /*
+    // Problem set 1, test (0.txt) => 142 
+    run("0.txt", aoc1);
+    // Part 1 (1.txt) => 54877
+    run("1.txt", aoc1);
+    // Part 2 (2.txt) => 281
+    run("2.txt", aoc1_part2); 
+    // Part 2 (1.txt) => 
+    run("1.txt", aoc1_part2); 
 
-    // Problem set 2, test (3.txt)
+    // Problem set 2, test (3.txt) => 8, 2286
+    run("3.txt", aoc2);
     // Part 1 (4.txt) => 2486
-    // Part 2 (5.txt) => 87984
-    // aoc3();
+    // Part 2 (4.txt) => 87984
+    run("4.txt", aoc2);
 
-    // Problem set 3, test (6.txt) => 4361
+    // Problem set 3, test (6.txt) => 4361, 467835
+    run("6.txt", aoc3);
     // Part 1 (7.txt) => 539713
     // Part 2 (7.txt) => 84159075
-    // aoc4();
+    run("7.txt", aoc3);
+    */ 
 
-    // Problem set 4, test (8.txt) => 13
+    // Problem set 4, test (8.txt) => 13, 30
+    run("8.txt", aoc4);
     // Part 1 (9.txt) => 20107
     // Part 1 (9.txt) => 8172507
-    aoc5();
+    run("9.txt", aoc4);
 }
