@@ -366,7 +366,7 @@ void aoc4(ifstream& fs) {
     cout << num_scratchcards << endl;
 }
 
-uint64_t readInt64(string s) {
+uint64_t read_uint64(string s) {
     std::istringstream iss(s);
     uint64_t val;
     iss >> val;
@@ -397,9 +397,9 @@ void aoc5(ifstream& fs, bool seed_intervals) {
             }
 
             auto tokens = tokenize(line, ' ');
-            auto dst = readInt64(trim(tokens[0]));
-            auto src = readInt64(trim(tokens[1]));
-            auto len = readInt64(trim(tokens[2]));
+            auto dst = read_uint64(trim(tokens[0]));
+            auto src = read_uint64(trim(tokens[1]));
+            auto len = read_uint64(trim(tokens[2]));
             m.intervals.push_back({src, dst, len});
         }
 
@@ -417,7 +417,7 @@ void aoc5(ifstream& fs, bool seed_intervals) {
             continue;
         }
 
-        auto seed = readInt64(trim(s));
+        auto seed = read_uint64(trim(s));
         seeds.push_back(seed);
         if (!seed_intervals) {
             seeds.push_back(1);
@@ -518,12 +518,60 @@ void aoc5(ifstream& fs, bool seed_intervals) {
     cout << min_location << endl;
 }
 
+void aoc6(ifstream& fs, bool no_kerning = false) {
+    string line;
+
+    getline(fs, line);
+    auto tokens = tokenize(tokenize(line, ':')[1], ' ');
+    string ts;
+    vector<uint64_t> times;
+    for (auto t : tokens) {
+        if (t == "") {
+            continue;
+        }
+
+        ts += t;
+        times.push_back(read_uint64(t));
+    }
+
+    getline(fs, line);
+    tokens = tokenize(tokenize(line, ':')[1], ' ');
+    string ds;
+    vector<uint64_t> distances;
+    for (auto t : tokens) {
+        if (t == "") {
+            continue;
+        }
+
+        ds += t;
+        distances.push_back(read_uint64(t));
+    }
+
+    if (no_kerning) {
+        times = {read_uint64(ts)};
+        distances = {read_uint64(ds)};
+    }
+
+    int total = 1;
+    for (int i = 0; i < times.size(); i++) {
+        int winning = 0;
+        for (int hold_time = 1; hold_time < times[i]; hold_time++) {
+            if ((times[i] - hold_time) * hold_time > distances[i]) {
+                winning++;
+            }
+        }
+        
+        total *= winning;
+    }
+
+    cout << total << endl;
+}
+
 void run(string filename, function<void(ifstream&)> fn) {
     std::ifstream fs(filename);
     fn(fs);
     fs.close();
 }
-
 
 int main() {
     /*
@@ -553,7 +601,6 @@ int main() {
     // Part 1 (9.txt) => 20107
     // Part 1 (9.txt) => 8172507
     run("9.txt", aoc4);
-    */
 
     // Problem set 5, test (10.txt) => 35
     run("10.txt", [](ifstream& fs) { aoc5(fs, false); });
@@ -563,4 +610,12 @@ int main() {
     run("10.txt", [](ifstream& fs) { aoc5(fs, true); });
     // Part 2 (11.txt) => 15290096
     run("11.txt", [](ifstream& fs) { aoc5(fs, true); });
+    */
+
+    // Problem set 6, test (12.txt) => 288
+    run("12.txt", [](ifstream& fs) { aoc6(fs, false); });
+    // Part 1 (13.txt) => 625968
+    run("13.txt", [](ifstream& fs) { aoc6(fs, false); });
+    // Part 2 test (13.txt) => 43663323
+    run("13.txt", [](ifstream& fs) { aoc6(fs, true); });
 }
