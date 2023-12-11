@@ -21,7 +21,7 @@ void aoc1(ifstream& fs) {
         sum += first * 10 + last;
     }
 
-    std::cout << sum << std::endl;
+    cout << sum << endl;
 }
 
 void aoc1_part2(ifstream& fs) {
@@ -72,7 +72,7 @@ void aoc1_part2(ifstream& fs) {
         sum += first * 10 + last;
     }
 
-    std::cout << sum << std::endl;
+    cout << sum << endl;
 }
 
 vector<string> tokenize(const string &str, char delimiter) {
@@ -222,14 +222,14 @@ void aoc3(ifstream& fs) {
     }
 
     /*
-    std::cout <<"--------" << std::endl;
+    cout <<"--------" << endl;
     for (auto i = 0; i < symbols.size(); i++) {
         for (auto j : symbols[i]) {
-            std::cout << j << " ";
+            cout << j << " ";
         }
-        std::cout << std::endl;
+        cout << endl;
     }
-    std::cout <<"--------" << std::endl;
+    cout <<"--------" << endl;
     */
 
     auto is_symbol = [&](int i, int j) -> bool {
@@ -294,7 +294,7 @@ void aoc3(ifstream& fs) {
         }
     };
 
-    std::cout << sum << std::endl;
+    cout << sum << endl;
 
     auto sum_gear_rations = 0;
     for (auto i = 0; i < stars.size(); i++) {
@@ -310,7 +310,7 @@ void aoc3(ifstream& fs) {
         }
     }
 
-    std::cout << sum_gear_rations << std::endl;
+    cout << sum_gear_rations << endl;
 }
 
 void aoc4(ifstream& fs) {
@@ -366,6 +366,188 @@ void aoc4(ifstream& fs) {
     cout << num_scratchcards << endl;
 }
 
+uint64_t readInt64(string s) {
+    std::istringstream iss(s);
+    uint64_t val;
+    iss >> val;
+
+    return val;
+}
+
+void aoc5(ifstream& fs, bool seed_intervals) {
+    struct mapping {
+        struct interval {
+            uint64_t src, dst, len;
+        };
+
+        vector<interval> intervals;
+    };
+
+    auto sortMapping = [](mapping& m) {
+        std::sort(m.intervals.begin(), m.intervals.end(), 
+                [](const mapping::interval& a, const mapping::interval& b) {
+            return a.src > b.src;
+        });
+    };
+ 
+    auto readMapping = [&](string name) -> mapping {
+        string line;
+        getline(fs, line);
+        if (line != name) {
+            throw std::runtime_error("invalid mapping");
+        }
+
+        mapping m;
+        for (std::string line; std::getline(fs, line);) {
+            if (line == "") {
+                break;
+            }
+
+            auto tokens = tokenize(line, ' ');
+            auto dst = readInt64(trim(tokens[0]));
+            auto src = readInt64(trim(tokens[1]));
+            auto len = readInt64(trim(tokens[2]));
+            m.intervals.push_back({src, dst, len});
+        }
+
+        sortMapping(m);
+
+        return m;
+    };
+
+    // First line containing the seeds.
+    string line;
+    std::getline(fs, line);
+    auto seedTokens = tokenize(tokenize(line, ':')[1], ' ');
+    vector<uint64_t> seeds;
+
+    for (auto s : seedTokens) {
+        if (s == "") {
+            continue;
+        }
+
+        auto seed = readInt64(trim(s));
+        seeds.push_back(seed);
+        if (!seed_intervals) {
+            seeds.push_back(1);
+        }
+    }
+
+    // Read an empty line.
+    getline(fs, line);
+
+    // Read mappings.
+    vector<mapping> mappings;
+    mappings.push_back(readMapping("seed-to-soil map:"));
+    mappings.push_back(readMapping("soil-to-fertilizer map:"));
+    mappings.push_back(readMapping("fertilizer-to-water map:"));
+    mappings.push_back(readMapping("water-to-light map:"));
+    mappings.push_back(readMapping("light-to-temperature map:"));
+    mappings.push_back(readMapping("temperature-to-humidity map:"));
+    mappings.push_back(readMapping("humidity-to-location map:"));
+
+    auto translate = [](const mapping& m, uint64_t val) -> uint64_t {
+        for (const auto& interval : m.intervals) {
+            if (val >= interval.src && val < interval.src + interval.len) {
+                return interval.dst + (val - interval.src);
+            }
+        }
+
+        return val;
+    };
+
+    auto print = [](const set<pair<uint64_t, uint64_t>>& s) {
+        for (const auto& v : s) {
+            cout << "[" << v.first << ", " << v.second << "] ";
+        }
+        cout << endl;
+    };
+
+
+    set<pair<uint64_t, uint64_t>> current;
+    // Translate seeds to  closed intervals;
+    for (auto i = 0; i < seeds.size(); i += 2) {
+        current.insert(make_pair(seeds[i], seeds[i] + seeds[i+1] - 1));
+    }
+
+    cout << "seeds: ";
+    print(current);
+
+    set<pair<uint64_t, uint64_t>> next;
+    int level = 0;
+    while (level < mappings.size()) {
+        for (const auto& curr : current) {
+            // [l1, r1] is the next "seed" interval for the current level.
+            const auto l1 = curr.first;
+            const auto r1 = curr.second;
+
+            // Now intersect it with the current level's mapping.
+            auto has_intersection = false;
+            for (const auto& interval : mappings[level].intervals) {
+                const auto l2 = interval.src;
+                const auto r2 = interval.src + interval.len - 1;
+
+                if (r1 < l2 || r2 < l1) {
+                    continue;
+                }
+               
+                has_intersection = true;
+
+                // The intersection is [max(l1, l2), min(r1, r2)]. 
+                next.insert({std::max(l1, l2), std::min(r1, r2)});
+
+                // If the seed interval's left is outside.
+                if (l1 < l2) {
+                    next.insert({l1, l2-1});
+                }
+
+                // If the seed interval's right is outside.
+                if (r2 < r1) {
+                    next.insert({r2+1, r1});
+                }
+            }
+
+            // If there was no intersection, then the seed interval moves 
+            // to the next level unchanged.
+            if (!has_intersection) {
+                next.insert({l1, r1});
+            }
+        }
+        
+       
+        cout << "mappings: ";
+        for (auto interval : mappings[level].intervals) {
+            cout << "[" << interval.src << ", " << interval.src + interval.len - 1 << "] => [" 
+                             << interval.dst << ", " << interval.dst + interval.len - 1<< "]; ";
+        }
+        cout << endl;
+        
+        cout << "after intersecting: ";
+        print(next);
+       
+        // Now translate the new intervals to the next level.
+        current.clear();
+        for (const auto& v : next) {
+            current.insert({
+                    translate(mappings[level], v.first), 
+                    translate(mappings[level], v.second)
+            });
+        }
+
+        cout << "mapped: " << endl;
+        print(current);
+        cout << "=============" << endl;
+
+        // Jump to the next level.
+        next.clear();
+        level++;
+    }
+
+    auto min_location = current.begin()->first;
+    cout << min_location << endl;
+    cout << "------------" << endl;
+}
+
 void run(string filename, function<void(ifstream&)> fn) {
     std::ifstream fs(filename);
     fn(fs);
@@ -395,11 +577,20 @@ int main() {
     // Part 1 (7.txt) => 539713
     // Part 2 (7.txt) => 84159075
     run("7.txt", aoc3);
-    */ 
 
     // Problem set 4, test (8.txt) => 13, 30
     run("8.txt", aoc4);
     // Part 1 (9.txt) => 20107
     // Part 1 (9.txt) => 8172507
     run("9.txt", aoc4);
+    */
+
+    // Problem set 5, test (10.txt) => 35
+    run("10.txt", [](ifstream& fs) { aoc5(fs, false); });
+    // Part 1 (11.txt) => 424490994
+    run("11.txt", [](ifstream& fs) { aoc5(fs, false); });
+    // Part 2 test (10.txt) => 46
+    run("10.txt", [](ifstream& fs) { aoc5(fs, true); });
+    // Part 2 (11.txt) => ?
+    // run("11.txt", [](ifstream& fs) { aoc5(fs, true); });
 }
