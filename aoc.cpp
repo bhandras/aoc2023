@@ -383,13 +383,6 @@ void aoc5(ifstream& fs, bool seed_intervals) {
         vector<interval> intervals;
     };
 
-    auto sortMapping = [](mapping& m) {
-        std::sort(m.intervals.begin(), m.intervals.end(), 
-                [](const mapping::interval& a, const mapping::interval& b) {
-            return a.src > b.src;
-        });
-    };
- 
     auto readMapping = [&](string name) -> mapping {
         string line;
         getline(fs, line);
@@ -409,8 +402,6 @@ void aoc5(ifstream& fs, bool seed_intervals) {
             auto len = readInt64(trim(tokens[2]));
             m.intervals.push_back({src, dst, len});
         }
-
-        sortMapping(m);
 
         return m;
     };
@@ -456,30 +447,21 @@ void aoc5(ifstream& fs, bool seed_intervals) {
         return val;
     };
 
-    auto print = [](const set<pair<uint64_t, uint64_t>>& s) {
-        for (const auto& v : s) {
-            cout << "[" << v.first << ", " << v.second << "] ";
-        }
-        cout << endl;
-    };
-
-
     set<pair<uint64_t, uint64_t>> current;
     // Translate seeds to  closed intervals;
     for (auto i = 0; i < seeds.size(); i += 2) {
         current.insert(make_pair(seeds[i], seeds[i] + seeds[i+1] - 1));
     }
 
-    cout << "seeds: ";
-    print(current);
-
     set<pair<uint64_t, uint64_t>> next;
     int level = 0;
     while (level < mappings.size()) {
-        for (const auto& curr : current) {
+        while (!current.empty()) {
+            const auto& it = current.begin();
+
             // [l1, r1] is the next "seed" interval for the current level.
-            const auto l1 = curr.first;
-            const auto r1 = curr.second;
+            const auto l1 = it->first;
+            const auto r1 = it->second;
 
             // Now intersect it with the current level's mapping.
             auto has_intersection = false;
@@ -498,12 +480,12 @@ void aoc5(ifstream& fs, bool seed_intervals) {
 
                 // If the seed interval's left is outside.
                 if (l1 < l2) {
-                    next.insert({l1, l2-1});
+                    current.insert({l1, l2-1});
                 }
 
                 // If the seed interval's right is outside.
                 if (r2 < r1) {
-                    next.insert({r2+1, r1});
+                    current.insert({r2+1, r1});
                 }
             }
 
@@ -512,31 +494,20 @@ void aoc5(ifstream& fs, bool seed_intervals) {
             if (!has_intersection) {
                 next.insert({l1, r1});
             }
+
+            // We can now delete the current seed interval since it's been
+            // sliced up into smaller intervals.
+            current.erase(it);
         }
         
-       
-        cout << "mappings: ";
-        for (auto interval : mappings[level].intervals) {
-            cout << "[" << interval.src << ", " << interval.src + interval.len - 1 << "] => [" 
-                             << interval.dst << ", " << interval.dst + interval.len - 1<< "]; ";
-        }
-        cout << endl;
-        
-        cout << "after intersecting: ";
-        print(next);
-       
+      
         // Now translate the new intervals to the next level.
-        current.clear();
         for (const auto& v : next) {
             current.insert({
                     translate(mappings[level], v.first), 
                     translate(mappings[level], v.second)
             });
         }
-
-        cout << "mapped: " << endl;
-        print(current);
-        cout << "=============" << endl;
 
         // Jump to the next level.
         next.clear();
@@ -545,7 +516,6 @@ void aoc5(ifstream& fs, bool seed_intervals) {
 
     auto min_location = current.begin()->first;
     cout << min_location << endl;
-    cout << "------------" << endl;
 }
 
 void run(string filename, function<void(ifstream&)> fn) {
@@ -591,6 +561,6 @@ int main() {
     run("11.txt", [](ifstream& fs) { aoc5(fs, false); });
     // Part 2 test (10.txt) => 46
     run("10.txt", [](ifstream& fs) { aoc5(fs, true); });
-    // Part 2 (11.txt) => ?
-    // run("11.txt", [](ifstream& fs) { aoc5(fs, true); });
+    // Part 2 (11.txt) => 15290096
+    run("11.txt", [](ifstream& fs) { aoc5(fs, true); });
 }
