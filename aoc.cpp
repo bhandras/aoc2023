@@ -567,6 +567,129 @@ void aoc6(ifstream& fs, bool no_kerning = false) {
     cout << total << endl;
 }
 
+void aoc7(ifstream& fs) {
+    struct card {
+        char value;
+
+        int score() const {
+            switch (value) {
+                case 'A':
+                    return 14;
+                case 'K':
+                    return 13;
+                case 'Q':
+                    return 12;
+                case 'J':
+                    return 11;
+                case 'T':
+                    return 10;
+                default:
+                    return value - '0';
+            }
+        }
+
+        bool operator <(const card& other) const {
+            return value < other.value;
+        }
+    };
+
+    struct hand {
+        vector<card> cards;
+
+        hand(string s) : cards(vector<card>(s.size())) {
+            for (int i = 0; i < 5; i++) {
+                cards[i].value = s[i];
+            }
+        }
+
+        int score() const {
+            int max_count = 0;
+            unordered_map<int, int> counts;
+
+            for (auto c : cards) {
+                counts[c.value]++;
+                if (counts[c.value] > max_count) {
+                    max_count = counts[c.value];
+                }
+            }
+            
+            // five of a kind gets 7 points
+            if (max_count == 5) {
+                return 7;
+            }
+
+            // four of a kind gets 6 points
+            if (max_count == 4) {
+                return 6;
+            }
+
+            if (max_count == 3) {
+                // full house gets 5 points
+                if (counts.size() == 2) {
+                    return 5;
+                }
+
+                // three of a kind gets 4 points
+                return 4;
+            }
+
+            if (max_count == 2) {
+                // two pairs gets 3 points
+                if (counts.size() == 3) {
+                    return 3;
+                }
+
+                // one pair gets 2 point
+                return 2;
+            }
+
+            if (counts.size() == 5) {
+                // high card gets 1 point 
+                return 1;
+            }
+
+            return 0;
+        }
+
+        bool operator <(const hand& other) const {
+            auto s1 = score();
+            auto s2 = other.score();
+            if (s1 != s2) {
+                return s1 < s2;
+            }
+
+            for (int i = 0; i < 5; i++) {
+                if (cards[i].value != other.cards[i].value) {
+                    return cards[i].score() < other.cards[i].score();
+                }
+            }
+
+            return false;
+        }
+
+        void print() const {
+            for (auto c : cards) {
+                cout << c.value;
+            } 
+            cout << " score: " << score();
+        }
+    };
+
+    map<hand, int> hands;
+    for (std::string line; std::getline(fs, line);) {
+        auto tokens = tokenize(line, ' ');
+        hands.insert({hand(tokens[0]), stoi(tokens[1])});
+    }
+
+    int rank = 1, total_winnings = 0;
+    for (auto hand_bid : hands) {
+        total_winnings += hand_bid.second * rank;
+        rank++;
+    }
+
+    cout << total_winnings << endl;
+}
+
 void run(string filename, function<void(ifstream&)> fn) {
     std::ifstream fs(filename);
     fn(fs);
@@ -610,7 +733,6 @@ int main() {
     run("10.txt", [](ifstream& fs) { aoc5(fs, true); });
     // Part 2 (11.txt) => 15290096
     run("11.txt", [](ifstream& fs) { aoc5(fs, true); });
-    */
 
     // Problem set 6, test (12.txt) => 288
     run("12.txt", [](ifstream& fs) { aoc6(fs, false); });
@@ -618,4 +740,11 @@ int main() {
     run("13.txt", [](ifstream& fs) { aoc6(fs, false); });
     // Part 2 test (13.txt) => 43663323
     run("13.txt", [](ifstream& fs) { aoc6(fs, true); });
+    */
+
+    // Problem set 7, test (14.txt) => 6440
+    run("14.txt", aoc7);
+    // Part 1 (15.txt) => 249204891
+    // Part 2 (15.txt) =>
+    run("15.txt", aoc7);
 }
