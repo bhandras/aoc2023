@@ -571,7 +571,7 @@ void aoc7(ifstream& fs) {
     struct card {
         char value;
 
-        int score() const {
+        int score(bool joker) const {
             switch (value) {
                 case 'A':
                     return 14;
@@ -580,6 +580,9 @@ void aoc7(ifstream& fs) {
                 case 'Q':
                     return 12;
                 case 'J':
+                    if (joker) {
+                        return 1;
+                    }
                     return 11;
                 case 'T':
                     return 10;
@@ -587,32 +590,43 @@ void aoc7(ifstream& fs) {
                     return value - '0';
             }
         }
-
-        bool operator <(const card& other) const {
-            return value < other.value;
-        }
     };
 
     struct hand {
         vector<card> cards;
+        bool joker;
 
-        hand(string s) : cards(vector<card>(s.size())) {
+        hand(string s, bool joker) 
+            : cards(vector<card>(s.size())), joker(joker) {
             for (int i = 0; i < 5; i++) {
                 cards[i].value = s[i];
             }
         }
 
         int score() const {
+            char max_card;
             int max_count = 0;
-            unordered_map<int, int> counts;
+            unordered_map<char, int> counts;
+            int count_j = 0;
 
             for (auto c : cards) {
+                if (joker && c.value == 'J') {
+                    count_j++;
+                    continue;
+                }
+
                 counts[c.value]++;
                 if (counts[c.value] > max_count) {
                     max_count = counts[c.value];
+                    max_card = c.value;
                 }
             }
-            
+
+            if (count_j > 0) {
+                counts[max_card] += count_j;
+                max_count += count_j;
+            }
+
             // five of a kind gets 7 points
             if (max_count == 5) {
                 return 7;
@@ -660,7 +674,7 @@ void aoc7(ifstream& fs) {
 
             for (int i = 0; i < 5; i++) {
                 if (cards[i].value != other.cards[i].value) {
-                    return cards[i].score() < other.cards[i].score();
+                    return cards[i].score(joker) < other.cards[i].score(joker);
                 }
             }
 
@@ -676,18 +690,29 @@ void aoc7(ifstream& fs) {
     };
 
     map<hand, int> hands;
+    map<hand, int> hands_j;
     for (std::string line; std::getline(fs, line);) {
         auto tokens = tokenize(line, ' ');
-        hands.insert({hand(tokens[0]), stoi(tokens[1])});
+        auto bid = stoi(tokens[1]);
+        hands.insert({hand(tokens[0], false), bid});
+        hands_j.insert({hand(tokens[0], true), bid});
     }
 
-    int rank = 1, total_winnings = 0;
+    int rank = 1, total_winnings1 = 0;
     for (auto hand_bid : hands) {
-        total_winnings += hand_bid.second * rank;
+        total_winnings1 += hand_bid.second * rank;
         rank++;
     }
 
-    cout << total_winnings << endl;
+    rank = 1;
+    int total_winnings2 = 0;
+    for (auto hand_bid : hands_j) {
+        total_winnings2 += hand_bid.second * rank;
+        rank++;
+    }
+
+    cout << "part1: " << total_winnings1 << endl 
+         << "part2: " << total_winnings2 << endl;
 }
 
 void run(string filename, function<void(ifstream&)> fn) {
@@ -745,6 +770,6 @@ int main() {
     // Problem set 7, test (14.txt) => 6440
     run("14.txt", aoc7);
     // Part 1 (15.txt) => 249204891
-    // Part 2 (15.txt) =>
+    // Part 2 (15.txt) => 249666369
     run("15.txt", aoc7);
 }
