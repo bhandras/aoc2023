@@ -1,5 +1,6 @@
 #include "aoc.h"
 #include <cctype>
+#include <numeric>
 
 void aoc1(ifstream& fs) {
     int sum = 0;
@@ -715,6 +716,112 @@ void aoc7(ifstream& fs) {
          << "part2: " << total_winnings2 << endl;
 }
 
+uint64_t lcm(vector<uint64_t> v) {
+    if (v.size() == 2) {
+        return std::lcm(v[0], v[1]);
+    }
+
+    return std::lcm(v[0], lcm(vector<uint64_t>(v.begin() + 1, v.end())));
+}
+
+void aoc8(ifstream& fs, bool part2 = false) {
+    string steps;
+    getline(fs, steps);
+
+    // Jump over an empty line.
+    string line;
+    getline(fs, line);
+
+    // Read the mapping.
+    unordered_map<string, pair<string, string>> mapping;
+
+    for (std::string line; std::getline(fs, line);) {
+        if (line == "") {
+            break;
+        }
+
+        // We don't really need to tokenize as everything is fixed size.
+        auto src = line.substr(0, 3);
+        auto l = line.substr(7, 3);
+        auto r = line.substr(12, 3);
+
+        mapping[src] = {l, r};
+    }
+
+    vector<pair<string, int>> state;
+
+    if (!part2) {
+        state = {{"AAA", -1}};
+    } else {
+        for (const auto& kv : mapping) {
+            if (kv.first[2] == 'A') {
+                state.push_back({kv.first, -1});
+            }
+        }
+    }
+
+
+    auto step = [&](string curr, char step) -> string {
+        switch (step) {
+            case 'L':
+                return mapping[curr].first;
+
+            case 'R':
+                return mapping[curr].second;
+
+            default:
+                cout << "invalid step" << endl;
+                return "";
+        }
+    };
+    
+    cout << "start: ";
+    for (auto i = 0; i < state.size(); i++) {
+        cout << state[i].first << " ";
+    }
+    cout << endl;
+
+    int cnt = 0;
+
+    int have_z = 0;
+    for (;;) {
+        for (auto i = 0; i < steps.size(); i++) {
+            cnt++;
+            
+            for (auto j = 0; j < state.size(); j++) {
+                state[j].first = step(state[j].first, steps[i]);
+
+                // For part 2 we find the step when each state starts to loop.
+                if (part2 && state[j].first[2] == 'Z' && state[j].second == -1) {
+                    state[j].second = cnt;
+                    have_z++;
+                }
+            }
+
+            if (!part2) {
+                if (state[0].first == "ZZZ") {
+                    cout << cnt << endl;
+                    return;
+                }
+            } else {
+                if (have_z == state.size()) {
+                    vector<uint64_t> zs;
+                    for (auto s : state) {
+                        zs.push_back(s.second);
+                    }
+
+                    // And then we just calculate the least common multiple.
+                    // This also assumes that the test data really loops after
+                    // we find the first Zs for each starting state, which
+                    // appears to be true.
+                    cout << lcm(zs) << endl;
+                    return;
+                }
+            }
+        }
+    }
+}
+
 void run(string filename, function<void(ifstream&)> fn) {
     std::ifstream fs(filename);
     fn(fs);
@@ -768,8 +875,17 @@ int main() {
     */
 
     // Problem set 7, test (14.txt) => 6440
-    run("14.txt", aoc7);
+    // run("14.txt", aoc7);
     // Part 1 (15.txt) => 249204891
     // Part 2 (15.txt) => 249666369
-    run("15.txt", aoc7);
+    // run("15.txt", aoc7);
+
+    // Problem set 8, test (17.txt) => 6
+    run("17.txt", [](ifstream& fs) { aoc8(fs, false); });
+    // Part 1 (18.txt) => 16531
+    run("18.txt", [](ifstream& fs) { aoc8(fs, false); });
+    // Part 2 test (19.txt) => 6
+    run("19.txt", [](ifstream& fs) { aoc8(fs, true); });
+    // Part 2 (18.txt) => 24035773251517
+    run("18.txt", [](ifstream& fs) { aoc8(fs, true); });
 }

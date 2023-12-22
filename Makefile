@@ -1,9 +1,9 @@
 CXX := clang++
-CXXFLAGS := -std=c++11 -I../template -Wall
+CXXFLAGS := -std=c++17 -I../template -Wall
 TARGET := test
 
 all:
-	$(CXX) $(CXXFLAGS) *.cpp -o $(TARGET)
+	$(CXX) $(CXXFLAGS) *.cpp -g -o $(TARGET)
 
 test: all
 	./$(TARGET)
